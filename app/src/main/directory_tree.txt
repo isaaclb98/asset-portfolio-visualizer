@@ -1,0 +1,56 @@
+Folder PATH listing
+Volume serial number is 587B-463C
+C:.
+„   AndroidManifest.xml
+„   directory_tree.txt
+„   
+„¥„Ÿjava
+„   „¤„Ÿcom
+„       „¤„Ÿexample
+„           „¤„Ÿassetportfoliovisualizer
+„               „   MainActivity.kt
+„               „   
+„               „¤„Ÿui
+„                   „¤„Ÿtheme
+„                           Color.kt
+„                           Theme.kt
+„                           Type.kt
+„                           
+„¤„Ÿres
+    „¥„Ÿdrawable
+    „       ic_launcher_background.xml
+    „       ic_launcher_foreground.xml
+    „       
+    „¥„Ÿmipmap-anydpi-v26
+    „       ic_launcher.xml
+    „       ic_launcher_round.xml
+    „       
+    „¥„Ÿmipmap-hdpi
+    „       ic_launcher.webp
+    „       ic_launcher_round.webp
+    „       
+    „¥„Ÿmipmap-mdpi
+    „       ic_launcher.webp
+    „       ic_launcher_round.webp
+    „       
+    „¥„Ÿmipmap-xhdpi
+    „       ic_launcher.webp
+    „       ic_launcher_round.webp
+    „       
+    „¥„Ÿmipmap-xxhdpi
+    „       ic_launcher.webp
+    „       ic_launcher_round.webp
+    „       
+    „¥„Ÿmipmap-xxxhdpi
+    „       ic_launcher.webp
+    „       ic_launcher_round.webp
+    „       
+    „¥„Ÿvalues
+    „       colors.xml
+    „       strings.xml
+    „       themes.xml
+    „       
+    „¤„Ÿxml
+            backup_rules.xml
+            data_extraction_rules.xml
+            

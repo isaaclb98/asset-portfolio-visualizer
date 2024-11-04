@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Asset Portfolio Visualizer</string>
+    <string name="section_title_add_assets">Add Assets</string>
+    <string name="section_title_my_assets">My Assets</string>
+    <string name="search_asset">Search for an asset</string>
+    <string name="search_asset_default">E.g. MSFT, AAPL, etc.</string>
+</resources>
