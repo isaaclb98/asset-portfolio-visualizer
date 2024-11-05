@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val ALPHA_VANTAGE_API_KEY: String by project
+
 android {
     namespace = "com.example.assetportfoliovisualizer"
     compileSdk = 34
@@ -14,6 +16,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "ALPHA_VANTAGE_API_KEY", "\"${ALPHA_VANTAGE_API_KEY}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
