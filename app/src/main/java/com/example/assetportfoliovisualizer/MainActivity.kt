@@ -4,10 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -28,16 +32,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.assetportfoliovisualizer.ui.theme.AssetPortfolioVisualizerTheme
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.setValue
 
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: TickerSearchViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             AssetPortfolioVisualizerTheme {
-                MyAppScreen()
+                MyAppScreen(viewModel)
             }
         }
     }
@@ -45,7 +52,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyAppScreen() {
+fun MyAppScreen(viewModel: TickerSearchViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -59,10 +66,18 @@ fun MyAppScreen() {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues) // Applies padding based on top bar height
+                    .padding(paddingValues)
             ) {
                 SectionTitle(stringResource(id = R.string.section_title_add_assets))
-                TickerSearchField()
+                TickerSearchField(viewModel)
+                // Get the LiveData
+                val searchResults by viewModel.searchResults.observeAsState(emptyList())
+
+                LazyColumn {
+                    items(searchResults) {
+                        result -> SearchResultItem(result)
+                    }
+                }
             }
         }
     )
@@ -95,17 +110,30 @@ fun SectionTitle(title: String) {
 }
 
 @Composable
-fun TickerSearchField() {
+fun TickerSearchField(viewModel: TickerSearchViewModel) {
     var ticker by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = ticker,
-        onValueChange = { ticker = it },
+        onValueChange = {
+            ticker = it
+            viewModel.searchForSymbols(ticker)
+        },
         label = { Text(stringResource(id = R.string.search_asset)) },
         placeholder = { Text(stringResource(id = R.string.search_asset_default)) },
         singleLine = true,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp, horizontal = 16.dp)
+    )
+}
+
+@Composable
+fun SearchResultItem(result: BestMatch) {
+    Text(
+        text = "${result.symbol} - ${result.name}",
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
     )
 }
