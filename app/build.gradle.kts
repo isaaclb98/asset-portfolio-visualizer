@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp")
 }
 
 val ALPHA_VANTAGE_API_KEY: String by project
@@ -67,7 +68,10 @@ dependencies {
     // Moshi
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
-
+    // Logging
     implementation(libs.logging.interceptor)
-
+    // Room
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 }
