@@ -1,6 +1,8 @@
 package com.example.assetportfoliovisualizer
 
+import android.app.Application
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,7 +10,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class TickerSearchViewModel : ViewModel() {
+class TickerSearchViewModel() : ViewModel() {
     private val _searchResults = MutableLiveData<List<BestMatch>>()
     val searchResults: LiveData<List<BestMatch>> = _searchResults
 
@@ -45,4 +47,5 @@ class TickerSearchViewModel : ViewModel() {
 
         }
     }
+
 }
