@@ -5,7 +5,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class TimeSeriesViewModel : ViewModel() {
@@ -40,10 +39,10 @@ class TimeSeriesViewModel : ViewModel() {
                 } catch (e: Exception) {
                     Log.e("TimeSeriesViewModel", "Error fetching time series for ${it.symbol}", e)
                 }
-
-                _timeSeriesData.postValue(timeSeriesResults)
-                _currentPrices.postValue(currentPriceResults)
             }
+
+            _timeSeriesData.postValue(timeSeriesResults)
+            _currentPrices.postValue(currentPriceResults)
         }
     }
 }

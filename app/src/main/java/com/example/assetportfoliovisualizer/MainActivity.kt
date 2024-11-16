@@ -1,17 +1,20 @@
 package com.example.assetportfoliovisualizer
 
 import android.os.Bundle
-import android.util.Log
+import android.text.TextUtils
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
@@ -38,18 +41,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.Typeface
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
+import co.yml.charts.common.components.Legends
+import co.yml.charts.common.model.PlotType
+import co.yml.charts.common.utils.DataUtils
+import co.yml.charts.ui.piechart.charts.PieChart
+import co.yml.charts.ui.piechart.models.PieChartConfig
+import co.yml.charts.ui.piechart.models.PieChartData
 import com.example.assetportfoliovisualizer.ui.theme.AssetPortfolioVisualizerTheme
+import kotlin.random.Random
 
 
 class MainActivity : ComponentActivity() {
@@ -128,25 +139,48 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     }
                 }
 
+                // Update flag to only show pie chart, etc. when Update button is clicked
+                var isUpdateTriggered by remember { mutableStateOf(false) }
+
                 // Update button
-                UpdateButton( onClickUpdate = { timeSeriesViewModel.fetchTimeSeriesForAssets(ownedAssets) })
+                UpdateButton( onClickUpdate = {
+                    timeSeriesViewModel.fetchTimeSeriesForAssets(ownedAssets)
+                    isUpdateTriggered = true
+                })
 
                 // symbol -> price
                 val assetPrices by timeSeriesViewModel.currentPrices.observeAsState(emptyMap())
 
                 // symbol -> (price * quantity)
-                val assetHoldingTotalValues = ownedAssets.associate {
-                    val currentPrice = assetPrices[it.symbol] ?: 0.0
-                    val totalValue = currentPrice * it.quantity
-                    it.symbol to totalValue
-                }
+                var assetHoldingTotalValues by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
 
-                // Temp debugging
-                LaunchedEffect(assetHoldingTotalValues) {
-                    println("Asset Holding Total Values: $assetHoldingTotalValues")
-                }
+                if (isUpdateTriggered) {
+                    // Recalculate assetHoldingTotalValues only when assetPrices is fully updated
+                    LaunchedEffect(assetPrices) {
+                        println("assetPrices: $assetPrices")
+                        println("ownedAssets: ${ownedAssets.map { it.symbol }}")
 
-                
+                        // Check if assetPrices contains entries for all ownedAssets
+                        val allAssetsUpdated = ownedAssets.all { assetPrices.containsKey(it.symbol) }
+
+                        if (allAssetsUpdated) {
+                            val updatedValues = ownedAssets.associate {
+                                val currentPrice = assetPrices[it.symbol] ?: 0.0
+                                val totalValue = currentPrice * it.quantity
+                                it.symbol to totalValue
+                            }
+                            assetHoldingTotalValues = updatedValues
+                            println("assetHoldingTotalValues updated: $assetHoldingTotalValues")
+                        }
+                    }
+
+                    if (assetHoldingTotalValues.isNotEmpty()) {
+                        println("assetHoldingTotalValues: $assetHoldingTotalValues")
+                        AssetsPieChart(assetHoldingTotalValues)
+                    } else {
+                        Text("Loading...", modifier = Modifier.padding(16.dp))
+                    }
+                }
             }
         }
     )
@@ -249,7 +283,7 @@ fun SearchResultItem(result: BestMatch, onAddAsset: (OwnedAsset) -> Unit) {
                         label = { Text("Quantity") },
                         keyboardOptions = KeyboardOptions.Default.copy(
                             imeAction = ImeAction.Done,
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            keyboardType = KeyboardType.Number
                         ),
                         keyboardActions = KeyboardActions(onDone = {
                             addAsset()
@@ -287,7 +321,7 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
             Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = "Delete asset",
-                tint = androidx.compose.ui.graphics.Color.Red
+                tint = Color.Red
             )
         }
         Column {
@@ -319,6 +353,52 @@ fun UpdateButton(onClickUpdate: () -> Unit) {
 }
 
 @Composable
-fun AssetsPieChart() {
+fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>) {
+    // Generate a list of slices for the pie chart
+    val pieChartData = PieChartData(
+        slices = assetHoldingTotalValues.entries.map { entry ->
+            PieChartData.Slice(
+                label = entry.key,
+                value = entry.value.toFloat(),
+                // Generate a random colour based on the hash of the entry in the map
+                color = generateColorFromHash(entry.key)
+            )
+        },
+        plotType = PlotType.Pie
+    )
 
+    // Configure the pie chart
+    val pieChartConfig = PieChartConfig(
+        activeSliceAlpha = .9f,
+        isEllipsizeEnabled = true,
+        sliceLabelEllipsizeAt = TextUtils.TruncateAt.MIDDLE,
+        isAnimationEnable = true,
+        chartPadding = 20,
+        showSliceLabels = true,
+        labelVisible = true
+    )
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Legends(legendsConfig = DataUtils.getLegendsConfigFromPieChartData(pieChartData, 4))
+        }
+        // Create the actual Composable pie chart
+        PieChart(
+            modifier = Modifier
+                .padding(16.dp),
+            pieChartData = pieChartData,
+            pieChartConfig = pieChartConfig,
+        )
+    }
+}
+
+fun generateColorFromHash(key: String): Color {
+    val random = Random(key.hashCode())
+    val red = random.nextInt(0, 256)
+    val green = random.nextInt(0, 256)
+    val blue = random.nextInt(0, 256)
+    return Color(red, green, blue)
 }
