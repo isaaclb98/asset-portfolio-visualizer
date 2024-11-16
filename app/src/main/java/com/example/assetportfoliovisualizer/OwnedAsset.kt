@@ -8,5 +8,6 @@ data class OwnedAsset(
     @PrimaryKey val symbol: String,
     val name: String,
     val type: String,
-    val region: String
+    val region: String,
+    val quantity: Int,
 )

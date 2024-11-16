@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -24,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -32,9 +34,11 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -103,10 +107,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     items(searchResults) {
                         result -> SearchResultItem(
                             result = result,
-                            onItemClick = {
-                                val asset = OwnedAsset(symbol = result.symbol.toString(), name = result.name.toString(), type = result.type.toString(), region = result.region.toString())
-                                ownedAssetsViewModel.addOwnedAsset(asset)
-                            }
+                            onAddAsset = { asset -> ownedAssetsViewModel.addOwnedAsset(asset) }
                         )
                     }
                 }
@@ -184,15 +185,71 @@ fun TickerSearchField(viewModel: TickerSearchViewModel) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchResultItem(result: BestMatch, onItemClick: (BestMatch) -> Unit) {
+fun SearchResultItem(result: BestMatch, onAddAsset: (OwnedAsset) -> Unit) {
+    var openDialog by remember { mutableStateOf(false) }
+    var quantity by remember { mutableStateOf("") }
+
+    // Local function to avoid having to write duplicate code
+    fun addAsset() {
+        val quantityInt = quantity.toIntOrNull()
+        if (quantityInt != null && quantityInt > 0) {
+            val asset = OwnedAsset(
+                symbol = result.symbol.toString(),
+                name = result.name.toString(),
+                type = result.type.toString(),
+                region = result.region.toString(),
+                quantity = quantityInt
+            )
+            onAddAsset(asset)
+        }
+    }
+
     Text(
         text = "${result.symbol} - ${result.name}",
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp, horizontal = 16.dp)
-            .clickable { onItemClick(result) }
+            .clickable { openDialog = true }
         )
+
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = { openDialog = false },
+            text = {
+                Column {
+                    Text(text = "Enter quantity")
+                    OutlinedTextField(
+                        value = quantity,
+                        onValueChange = { newValue ->
+                            if (newValue.all { it.isDigit() }) {
+                                quantity = newValue
+                            }
+                        },
+                        label = { Text("Quantity") },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Done,
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
+                            addAsset()
+                            openDialog = false
+                        })
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    addAsset()
+                    openDialog = false
+                }) { Text("Confirm") }
+            },
+            dismissButton = {
+                TextButton(onClick = { openDialog = false }) { Text("Dismiss") }
+            }
+        )
+    }
 }
 
 @Composable
@@ -200,7 +257,8 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         // Delete icon
         IconButton(
@@ -213,9 +271,21 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
                 tint = androidx.compose.ui.graphics.Color.Red
             )
         }
-        Text(
-            text = "${asset.symbol} - ${asset.name} (${asset.type}, ${asset.region})",
-        )
+        Column {
+            Row {
+                Text(
+                    text = asset.symbol,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = " (${asset.quantity} shares)",
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
+            Text(text = "• ${asset.name}")
+            Text(text = "• ${asset.type}")
+            Text(text = "• ${asset.region}")
+        }
     }
 }
 
