@@ -1,6 +1,7 @@
 package com.example.assetportfoliovisualizer
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -128,6 +130,23 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
 
                 // Update button
                 UpdateButton( onClickUpdate = { timeSeriesViewModel.fetchTimeSeriesForAssets(ownedAssets) })
+
+                // symbol -> price
+                val assetPrices by timeSeriesViewModel.currentPrices.observeAsState(emptyMap())
+
+                // symbol -> (price * quantity)
+                val assetHoldingTotalValues = ownedAssets.associate {
+                    val currentPrice = assetPrices[it.symbol] ?: 0.0
+                    val totalValue = currentPrice * it.quantity
+                    it.symbol to totalValue
+                }
+
+                // Temp debugging
+                LaunchedEffect(assetHoldingTotalValues) {
+                    println("Asset Holding Total Values: $assetHoldingTotalValues")
+                }
+
+                
             }
         }
     )
@@ -297,4 +316,9 @@ fun UpdateButton(onClickUpdate: () -> Unit) {
     ) {
         Text("Update")
     }
+}
+
+@Composable
+fun AssetsPieChart() {
+
 }
