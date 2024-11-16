@@ -33,4 +33,11 @@ class OwnedAssetsViewModel(private val db: AppDatabase) : ViewModel() {
             fetchOwnedAssets()
         }
     }
+
+    fun deleteOwnedAsset(asset: OwnedAsset) {
+        viewModelScope.launch {
+            dao.delete(asset)
+            fetchOwnedAssets()
+        }
+    }
 }

@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,7 +15,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -102,9 +107,10 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     }
                 }
 
-                SectionTitle("Owned Assets")
                 val ownedAssets by ownedAssetsViewModel.ownedAssets.observeAsState(emptyList())
-                OwnedAssetsDisplay(ownedAssets)
+                OwnedAssetsDisplay(ownedAssets, onClickDelete = {
+                    asset -> ownedAssetsViewModel.deleteOwnedAsset(asset)
+                })
             }
         }
     )
@@ -169,23 +175,39 @@ fun SearchResultItem(result: BestMatch, onItemClick: (BestMatch) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp, horizontal = 16.dp)
-            .clickable{ onItemClick(result) }
+            .clickable { onItemClick(result) }
         )
 }
 
 @Composable
-fun OwnedAssetItem(asset: OwnedAsset) {
-    Text(
-        text = "${asset.symbol} - ${asset.name} (${asset.type}, ${asset.region})",
+fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-    )
+    ) {
+
+        IconButton(
+            onClick = { onClickDelete(asset) },
+            modifier = Modifier.padding(horizontal = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete asset",
+                tint = androidx.compose.ui.graphics.Color.Red
+            )
+        }
+        Text(
+            text = "${asset.symbol} - ${asset.name} (${asset.type}, ${asset.region})",
+        )
+    }
 }
 
 @Composable
-fun OwnedAssetsDisplay(ownedAssets: List<OwnedAsset>) {
-    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+fun OwnedAssetsDisplay(ownedAssets: List<OwnedAsset>, onClickDelete: (OwnedAsset) -> Unit) {
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)) {
         Text(
             text = "Owned Assets",
             fontSize = 20.sp,
@@ -194,7 +216,10 @@ fun OwnedAssetsDisplay(ownedAssets: List<OwnedAsset>) {
         )
         LazyColumn {
             items(ownedAssets) { asset ->
-                OwnedAssetItem(asset)
+                OwnedAssetItem(
+                    asset,
+                    onClickDelete = { onClickDelete(it) }
+                )
             }
         }
     }
