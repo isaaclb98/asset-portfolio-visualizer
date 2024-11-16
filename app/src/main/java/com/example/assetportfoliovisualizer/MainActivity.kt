@@ -18,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -62,11 +63,12 @@ class MainActivity : ComponentActivity() {
         // Initialize our ViewModels
         val tickerSearchViewModel = TickerSearchViewModel()
         val ownedAssetsViewModel = OwnedAssetsViewModel(db)
+        val timeSeriesViewModel = TimeSeriesViewModel()
 
         enableEdgeToEdge()
         setContent {
             AssetPortfolioVisualizerTheme {
-                MyAppScreen(tickerSearchViewModel, ownedAssetsViewModel)
+                MyAppScreen(tickerSearchViewModel, ownedAssetsViewModel, timeSeriesViewModel)
             }
         }
     }
@@ -74,7 +76,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewModel: OwnedAssetsViewModel) {
+fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewModel: OwnedAssetsViewModel, timeSeriesViewModel: TimeSeriesViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -123,7 +125,8 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     }
                 }
 
-
+                // Update button
+                UpdateButton( onClickUpdate = { timeSeriesViewModel.fetchTimeSeriesForAssets(ownedAssets) })
             }
         }
     )
@@ -199,7 +202,7 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
-
+        // Delete icon
         IconButton(
             onClick = { onClickDelete(asset) },
             modifier = Modifier.padding(horizontal = 4.dp)
@@ -216,3 +219,12 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
     }
 }
 
+@Composable
+fun UpdateButton(onClickUpdate: () -> Unit) {
+    FilledTonalButton(
+        onClick = { onClickUpdate() },
+        modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
+    ) {
+        Text("Update")
+    }
+}

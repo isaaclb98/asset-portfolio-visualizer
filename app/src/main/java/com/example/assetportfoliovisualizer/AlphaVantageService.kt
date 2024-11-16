@@ -13,6 +13,14 @@ interface AlphaVantageService {
         @Query("keywords") keywords: String,
         @Query("apikey") apiKey: String = BuildConfig.ALPHA_VANTAGE_API_KEY
     ): Call<SymbolSearchResponse>
+
+    @GET("query")
+    suspend fun getTimeSeriesDaily(
+        @Query("function") function: String = "TIME_SERIES_DAILY",
+        @Query("symbol") symbol: String,
+        @Query("outputsize") outputsize: String = "full",
+        @Query("apikey") apiKey: String = BuildConfig.ALPHA_VANTAGE_API_KEY
+    ): TimeSeriesDailyResponse
 }
 
 
@@ -32,3 +40,24 @@ data class BestMatch(
     @Json(name = "9. matchScore") val matchScore: String?
 )
 
+data class TimeSeriesDailyResponse(
+    @Json(name = "Meta Data") val metaData: MetaData,
+    // We are mapping date -> daily data
+    @Json(name = "Time Series (Daily)") val timeSeriesDaily: Map<String, DailyData>
+)
+
+data class MetaData(
+    @Json(name = "1. Information") val information: String?,
+    @Json(name = "2. Symbol") val symbol: String?,
+    @Json(name = "3. Last Refreshed") val lastRefreshed: String?,
+    @Json(name = "4. Output Size") val outputSize: String?,
+    @Json(name = "5. Time Zone:") val timeZone: String?
+)
+
+data class DailyData(
+    @Json(name = "1. open") val open: String,
+    @Json(name = "2. high") val high: String,
+    @Json(name = "3. low") val low: String,
+    @Json(name = "4. close") val close: String,
+    @Json(name = "5. volume") val volume: String
+)
