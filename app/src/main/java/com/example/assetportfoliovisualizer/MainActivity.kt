@@ -90,11 +90,13 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
+                // Add assets section
                 SectionTitle(stringResource(id = R.string.section_title_add_assets))
+                // Search field
                 TickerSearchField(tickerSearchViewModel)
-                // Get the LiveData
+                // Get the search results LiveData from our view model
                 val searchResults by tickerSearchViewModel.searchResults.observeAsState(emptyList())
-
+                // Display the search results
                 LazyColumn {
                     items(searchResults) {
                         result -> SearchResultItem(
@@ -107,10 +109,21 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     }
                 }
 
+                // Owned assets section
+                SectionTitle(stringResource(id = R.string.owned_assets))
+                // Get our owned assets from our view model
                 val ownedAssets by ownedAssetsViewModel.ownedAssets.observeAsState(emptyList())
-                OwnedAssetsDisplay(ownedAssets, onClickDelete = {
-                    asset -> ownedAssetsViewModel.deleteOwnedAsset(asset)
-                })
+                // Display our owned assets
+                LazyColumn {
+                    items(ownedAssets) { asset ->
+                        OwnedAssetItem(
+                            asset,
+                            onClickDelete = { asset -> ownedAssetsViewModel.deleteOwnedAsset(asset) }
+                        )
+                    }
+                }
+
+
             }
         }
     )
@@ -203,24 +216,3 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
     }
 }
 
-@Composable
-fun OwnedAssetsDisplay(ownedAssets: List<OwnedAsset>, onClickDelete: (OwnedAsset) -> Unit) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp)) {
-        Text(
-            text = "Owned Assets",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        LazyColumn {
-            items(ownedAssets) { asset ->
-                OwnedAssetItem(
-                    asset,
-                    onClickDelete = { onClickDelete(it) }
-                )
-            }
-        }
-    }
-}

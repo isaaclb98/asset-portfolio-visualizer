@@ -4,4 +4,5 @@
     <string name="section_title_my_assets">My Assets</string>
     <string name="search_asset">Search for an asset</string>
     <string name="search_asset_default">e.g. MSFT, AAPL, etc.</string>
+    <string name="owned_assets">Owned Assets</string>
 </resources>
