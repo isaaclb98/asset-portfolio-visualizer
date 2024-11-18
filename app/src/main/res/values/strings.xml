@@ -5,4 +5,13 @@
     <string name="search_asset">Search for an asset</string>
     <string name="search_asset_default">e.g. MSFT, AAPL, etc.</string>
     <string name="owned_assets">Owned Assets</string>
+    <string name="pie_chart">Pie Chart</string>
+    <string name="summary">Summary</string>
+    <string name="performance">Performance</string>
+    <string name="net_worth">Net worth</string>
+    <string name="time_period">Time period</string>
+    <string name="percentage">Percentage</string>
+    <string name="update">Update</string>
+
+
 </resources>

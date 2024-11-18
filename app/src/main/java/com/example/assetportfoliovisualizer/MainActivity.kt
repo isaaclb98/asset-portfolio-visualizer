@@ -1,5 +1,6 @@
 package com.example.assetportfoliovisualizer
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.text.TextUtils
 import androidx.activity.ComponentActivity
@@ -86,6 +87,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("DefaultLocale")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewModel: OwnedAssetsViewModel, timeSeriesViewModel: TimeSeriesViewModel) {
@@ -104,6 +106,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
             // symbol -> (price * quantity)
             val assetHoldingTotalValues by timeSeriesViewModel.assetHoldingTotalValues.observeAsState(emptyMap())
             val netWorth by timeSeriesViewModel.netWorth.observeAsState()
+            val performanceOverTimePeriod by timeSeriesViewModel.performanceOverTimePeriod.observeAsState(emptyMap())
             var isUpdateTriggered by remember { mutableStateOf(false) }
 
             LazyColumn(
@@ -157,6 +160,11 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                 // If button is clicked
                 if (isUpdateTriggered) {
                     if (assetHoldingTotalValues.isNotEmpty()) {
+                        // Pie chart section
+                        item {
+                            SectionTitle(stringResource(id = R.string.pie_chart))
+                        }
+
                         // Show Pie Chart
                         item {
                             Box(
@@ -169,6 +177,11 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                             }
                         }
 
+                        // Summary section
+                        item {
+                            SectionTitle(stringResource(id = R.string.summary))
+                        }
+
                         // Header for chart
                         item {
                             Row(
@@ -178,13 +191,13 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                                     .padding(8.dp)
                             ) {
                                 Text(
-                                    text = "Net Worth:",
+                                    text = stringResource(id = R.string.net_worth),
                                     modifier = Modifier.weight(1f),
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
-                                    text = "$${netWorth ?: 0.0}",
+                                    text = String.format("%.2f", netWorth ?: 0.0),
                                     modifier = Modifier.weight(1f),
                                     textAlign = TextAlign.Center
                                 )
@@ -205,7 +218,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                                         textAlign = TextAlign.Center
                                     )
                                     Text(
-                                        text = "$${totalValue}",
+                                        text = String.format("%.2f", totalValue),
                                         modifier = Modifier.weight(1f),
                                         textAlign = TextAlign.Center
                                     )
@@ -213,10 +226,69 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                                 HorizontalDivider(color = Color.Gray, thickness = 0.5.dp)
                             }
                         }
+
+                        // Performance section
+                        item {
+                            SectionTitle(stringResource(id = R.string.performance))
+                        }
+
+                        // Header for chart
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(colorResource(id = R.color.pastel_blue))
+                                    .padding(8.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.time_period),
+                                    modifier = Modifier.weight(1f),
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = stringResource(id = R.string.percentage),
+                                    modifier = Modifier.weight(1f),
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+
+
+                        // Items of chart
+                        performanceOverTimePeriod.forEach { (timePeriod, percentage) ->
+                            val formattedPercentage = if (percentage != 0.0) {
+                                String.format("%.2f%%", percentage)
+                            } else {
+                                "N/A"
+                            }
+
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
+                                ) {
+                                    Text(
+                                        text = timePeriod,
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        text = formattedPercentage,
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                                HorizontalDivider(color = Color.Gray, thickness = 0.5.dp)
+                            }
+                        }
+
                     // Display loading message while data is loading from API call
                     } else {
                         item {
-                            Text("Loading...", modifier = Modifier.padding(16.dp))
+                            Text("Loading...", modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center)
                         }
                     }
                 }
@@ -265,7 +337,7 @@ fun TickerSearchField(viewModel: TickerSearchViewModel) {
         singleLine = true,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 16.dp),
+            .padding(horizontal = 16.dp),
         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(
             onSearch = {
@@ -383,13 +455,19 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
 
 @Composable
 fun UpdateButton(onClickUpdate: () -> Unit) {
-    FilledTonalButton(
-        onClick = { onClickUpdate() },
-        modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Update")
+        FilledTonalButton(
+            onClick = { onClickUpdate() },
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
+        ) {
+            Text(stringResource(id = R.string.update))
+        }
     }
 }
+
 
 @Composable
 fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>) {
