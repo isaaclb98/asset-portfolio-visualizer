@@ -5,7 +5,9 @@ import android.text.TextUtils
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,17 +15,22 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -104,33 +111,47 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
             )
         },
         content = { paddingValues ->
-            Column(
+            val searchResults by tickerSearchViewModel.searchResults.observeAsState(emptyList())
+            val ownedAssets by ownedAssetsViewModel.ownedAssets.observeAsState(emptyList())
+            // symbol -> (price * quantity)
+            val assetHoldingTotalValues by timeSeriesViewModel.assetHoldingTotalValues.observeAsState(emptyMap())
+            val netWorth by timeSeriesViewModel.netWorth.observeAsState()
+            var isUpdateTriggered by remember { mutableStateOf(false) }
+
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                // Add assets section
-                SectionTitle(stringResource(id = R.string.section_title_add_assets))
-                // Search field
-                TickerSearchField(tickerSearchViewModel)
+                item {
+                    // Add assets section
+                    SectionTitle(stringResource(id = R.string.section_title_add_assets))
+                }
+
+                item {
+                    // Search field
+                    TickerSearchField(tickerSearchViewModel)
+                }
+
                 // Get the search results LiveData from our view model
-                val searchResults by tickerSearchViewModel.searchResults.observeAsState(emptyList())
                 // Display the search results
-                LazyColumn {
-                    items(searchResults) {
-                        result -> SearchResultItem(
+                if (searchResults.isNotEmpty()) {
+                    items(searchResults) { result ->
+                        SearchResultItem(
                             result = result,
                             onAddAsset = { asset -> ownedAssetsViewModel.addOwnedAsset(asset) }
                         )
                     }
                 }
 
+                item {
+                    SectionTitle(stringResource(id = R.string.owned_assets))
+                }
+
                 // Owned assets section
-                SectionTitle(stringResource(id = R.string.owned_assets))
                 // Get our owned assets from our view model
-                val ownedAssets by ownedAssetsViewModel.ownedAssets.observeAsState(emptyList())
                 // Display our owned assets
-                LazyColumn {
+                if (ownedAssets.isNotEmpty()) {
                     items(ownedAssets) { asset ->
                         OwnedAssetItem(
                             asset,
@@ -140,45 +161,78 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                 }
 
                 // Update flag to only show pie chart, etc. when Update button is clicked
-                var isUpdateTriggered by remember { mutableStateOf(false) }
 
                 // Update button
-                UpdateButton( onClickUpdate = {
-                    timeSeriesViewModel.fetchTimeSeriesForAssets(ownedAssets)
-                    isUpdateTriggered = true
-                })
-
-                // symbol -> price
-                val assetPrices by timeSeriesViewModel.currentPrices.observeAsState(emptyMap())
-
-                // symbol -> (price * quantity)
-                var assetHoldingTotalValues by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
+                item {
+                    UpdateButton( onClickUpdate = {
+                        timeSeriesViewModel.fetchTimeSeriesForAssets(ownedAssets)
+                        isUpdateTriggered = true
+                    })
+                }
 
                 if (isUpdateTriggered) {
-                    // Recalculate assetHoldingTotalValues only when assetPrices is fully updated
-                    LaunchedEffect(assetPrices) {
-                        println("assetPrices: $assetPrices")
-                        println("ownedAssets: ${ownedAssets.map { it.symbol }}")
-
-                        // Check if assetPrices contains entries for all ownedAssets
-                        val allAssetsUpdated = ownedAssets.all { assetPrices.containsKey(it.symbol) }
-
-                        if (allAssetsUpdated) {
-                            val updatedValues = ownedAssets.associate {
-                                val currentPrice = assetPrices[it.symbol] ?: 0.0
-                                val totalValue = currentPrice * it.quantity
-                                it.symbol to totalValue
-                            }
-                            assetHoldingTotalValues = updatedValues
-                            println("assetHoldingTotalValues updated: $assetHoldingTotalValues")
-                        }
-                    }
-
+                    // Create the pie chart composable when we have our finalized assetHoldingTotalValues map
+                    // i.e. when the above block of code goes through
                     if (assetHoldingTotalValues.isNotEmpty()) {
-                        println("assetHoldingTotalValues: $assetHoldingTotalValues")
-                        AssetsPieChart(assetHoldingTotalValues)
+
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp)
+                                    .background(Color.LightGray)
+                            ) {
+                                AssetsPieChart(assetHoldingTotalValues)
+                            }
+                        }
+
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(colorResource(id = R.color.pastel_blue))
+                                    .padding(8.dp)
+                            ) {
+                                Text(
+                                    text = "Net Worth:",
+                                    modifier = Modifier.weight(1f),
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "$${netWorth ?: 0.0}",
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+
+                        assetHoldingTotalValues.forEach { (symbol, totalValue) ->
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
+                                ) {
+                                    Text(
+                                        text = symbol,
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Text(
+                                        text = "$${totalValue}",
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                                HorizontalDivider(color = Color.Gray, thickness = 0.5.dp)
+                            }
+                        }
+
                     } else {
-                        Text("Loading...", modifier = Modifier.padding(16.dp))
+                        item {
+                            Text("Loading...", modifier = Modifier.padding(16.dp))
+                        }
                     }
                 }
             }
@@ -378,21 +432,11 @@ fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>) {
         labelVisible = true
     )
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Legends(legendsConfig = DataUtils.getLegendsConfigFromPieChartData(pieChartData, 4))
-        }
-        // Create the actual Composable pie chart
-        PieChart(
-            modifier = Modifier
-                .padding(16.dp),
-            pieChartData = pieChartData,
-            pieChartConfig = pieChartConfig,
-        )
-    }
+    PieChart(
+        modifier = Modifier.fillMaxSize(),
+        pieChartData = pieChartData,
+        pieChartConfig = pieChartConfig,
+    )
 }
 
 fun generateColorFromHash(key: String): Color {
@@ -401,4 +445,29 @@ fun generateColorFromHash(key: String): Color {
     val green = random.nextInt(0, 256)
     val blue = random.nextInt(0, 256)
     return Color(red, green, blue)
+}
+
+@Composable
+fun BasicTableChart(data: List<List<String>>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        // Data Rows
+        data.forEach { row ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                row.forEach { cell ->
+                    Text(
+                        text = cell,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(8.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            HorizontalDivider(color = Color.Gray, thickness = 0.5.dp)
+        }
+    }
 }
