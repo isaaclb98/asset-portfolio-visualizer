@@ -7,27 +7,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -40,7 +32,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -52,7 +43,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.Typeface
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -60,9 +50,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.room.Room
-import co.yml.charts.common.components.Legends
 import co.yml.charts.common.model.PlotType
-import co.yml.charts.common.utils.DataUtils
 import co.yml.charts.ui.piechart.charts.PieChart
 import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
@@ -123,17 +111,16 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
+                // Add assets section
                 item {
-                    // Add assets section
                     SectionTitle(stringResource(id = R.string.section_title_add_assets))
                 }
 
+                // Search field
                 item {
-                    // Search field
                     TickerSearchField(tickerSearchViewModel)
                 }
 
-                // Get the search results LiveData from our view model
                 // Display the search results
                 if (searchResults.isNotEmpty()) {
                     items(searchResults) { result ->
@@ -144,12 +131,11 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     }
                 }
 
+                // Owned assets section
                 item {
                     SectionTitle(stringResource(id = R.string.owned_assets))
                 }
 
-                // Owned assets section
-                // Get our owned assets from our view model
                 // Display our owned assets
                 if (ownedAssets.isNotEmpty()) {
                     items(ownedAssets) { asset ->
@@ -160,8 +146,6 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     }
                 }
 
-                // Update flag to only show pie chart, etc. when Update button is clicked
-
                 // Update button
                 item {
                     UpdateButton( onClickUpdate = {
@@ -170,11 +154,10 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     })
                 }
 
+                // If button is clicked
                 if (isUpdateTriggered) {
-                    // Create the pie chart composable when we have our finalized assetHoldingTotalValues map
-                    // i.e. when the above block of code goes through
                     if (assetHoldingTotalValues.isNotEmpty()) {
-
+                        // Show Pie Chart
                         item {
                             Box(
                                 modifier = Modifier
@@ -186,6 +169,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                             }
                         }
 
+                        // Header for chart
                         item {
                             Row(
                                 modifier = Modifier
@@ -207,6 +191,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                             }
                         }
 
+                        // Items of chart
                         assetHoldingTotalValues.forEach { (symbol, totalValue) ->
                             item {
                                 Row(
@@ -228,7 +213,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                                 HorizontalDivider(color = Color.Gray, thickness = 0.5.dp)
                             }
                         }
-
+                    // Display loading message while data is loading from API call
                     } else {
                         item {
                             Text("Loading...", modifier = Modifier.padding(16.dp))
@@ -432,6 +417,7 @@ fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>) {
         labelVisible = true
     )
 
+    // Pie chart composable
     PieChart(
         modifier = Modifier.fillMaxSize(),
         pieChartData = pieChartData,
@@ -439,35 +425,11 @@ fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>) {
     )
 }
 
+// Generate a random RGB colour from the hash of the key of an item from assetHoldingTotalValues
 fun generateColorFromHash(key: String): Color {
     val random = Random(key.hashCode())
     val red = random.nextInt(0, 256)
     val green = random.nextInt(0, 256)
     val blue = random.nextInt(0, 256)
     return Color(red, green, blue)
-}
-
-@Composable
-fun BasicTableChart(data: List<List<String>>) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        // Data Rows
-        data.forEach { row ->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                row.forEach { cell ->
-                    Text(
-                        text = cell,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(8.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-            HorizontalDivider(color = Color.Gray, thickness = 0.5.dp)
-        }
-    }
 }
