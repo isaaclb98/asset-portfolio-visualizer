@@ -16,4 +16,7 @@ interface OwnedAssetDao {
 
     @Delete
     suspend fun delete(asset: OwnedAsset)
+
+    @Query("UPDATE OwnedAsset SET quantity = :newQuantity WHERE symbol = :symbol")
+    suspend fun modifyQuantity(symbol: String, newQuantity: Int)
 }

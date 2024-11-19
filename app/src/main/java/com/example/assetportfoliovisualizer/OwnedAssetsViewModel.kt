@@ -38,4 +38,11 @@ class OwnedAssetsViewModel(private val db: AppDatabase) : ViewModel() {
             fetchOwnedAssets()
         }
     }
+
+    fun modifyOwnedAsset(asset: OwnedAsset, newQuantity: Int) {
+        viewModelScope.launch {
+            dao.modifyQuantity(asset.symbol, newQuantity)
+            fetchOwnedAssets()
+        }
+    }
 }

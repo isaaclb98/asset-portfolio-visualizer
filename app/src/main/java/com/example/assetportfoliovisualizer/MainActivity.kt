@@ -1,8 +1,10 @@
 package com.example.assetportfoliovisualizer
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.text.TextUtils
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,7 +55,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.room.Room
+import co.yml.charts.common.components.Legends
 import co.yml.charts.common.model.PlotType
+import co.yml.charts.common.utils.DataUtils
 import co.yml.charts.ui.piechart.charts.PieChart
 import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
@@ -144,7 +150,10 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                     items(ownedAssets) { asset ->
                         OwnedAssetItem(
                             asset,
-                            onClickDelete = { asset -> ownedAssetsViewModel.deleteOwnedAsset(asset) }
+                            onClickDelete = { ownedAssetsViewModel.deleteOwnedAsset(it) },
+                            onModifyAsset = { modifiedAsset, newQuantity ->
+                                ownedAssetsViewModel.modifyOwnedAsset(modifiedAsset, newQuantity)
+                            }
                         )
                     }
                 }
@@ -173,7 +182,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                                     .padding(bottom = 16.dp)
                                     .background(Color.LightGray)
                             ) {
-                                AssetsPieChart(assetHoldingTotalValues)
+                                AssetsPieChart(assetHoldingTotalValues, LocalContext.current)
                             }
                         }
 
@@ -417,7 +426,17 @@ fun SearchResultItem(result: BestMatch, onAddAsset: (OwnedAsset) -> Unit) {
 }
 
 @Composable
-fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
+fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit, onModifyAsset: (OwnedAsset, Int) -> Unit) {
+    var openDialog by remember { mutableStateOf(false) }
+    var quantity by remember { mutableStateOf("") }
+
+    fun modifyAsset() {
+        val quantityInt = quantity.toIntOrNull()
+        if (quantityInt != null && quantityInt > 0) {
+            onModifyAsset(asset, quantityInt)
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -435,8 +454,9 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
                 tint = Color.Red
             )
         }
+
         Column {
-            Row {
+            Row (modifier = Modifier.clickable { openDialog = true }) {
                 Text(
                     text = asset.symbol,
                     fontWeight = FontWeight.Bold
@@ -449,6 +469,43 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit) {
             Text(text = "• ${asset.name}")
             Text(text = "• ${asset.type}")
             Text(text = "• ${asset.region}")
+        }
+
+        if (openDialog) {
+            AlertDialog(
+                onDismissRequest = { openDialog = false },
+                text = {
+                    Column {
+                        Text(text = "Enter new quantity")
+                        OutlinedTextField(
+                            value = quantity,
+                            onValueChange = { newValue ->
+                                if (newValue.all { it.isDigit() }) {
+                                    quantity = newValue
+                                }
+                            },
+                            label = { Text("Quantity") },
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = ImeAction.Done,
+                                keyboardType = KeyboardType.Number
+                            ),
+                            keyboardActions = KeyboardActions(onDone = {
+                                modifyAsset()
+                                openDialog = false
+                            })
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        modifyAsset()
+                        openDialog = false
+                    }) { Text("Confirm") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { openDialog = false }) { Text("Dismiss") }
+                }
+            )
         }
     }
 }
@@ -468,9 +525,8 @@ fun UpdateButton(onClickUpdate: () -> Unit) {
     }
 }
 
-
 @Composable
-fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>) {
+fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>, context: Context) {
     // Generate a list of slices for the pie chart
     val pieChartData = PieChartData(
         slices = assetHoldingTotalValues.entries.map { entry ->
@@ -495,12 +551,20 @@ fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>) {
         labelVisible = true
     )
 
-    // Pie chart composable
-    PieChart(
-        modifier = Modifier.fillMaxSize(),
-        pieChartData = pieChartData,
-        pieChartConfig = pieChartConfig,
-    )
+    Column(modifier = Modifier.height(500.dp)) {
+        Legends(
+            legendsConfig = DataUtils.getLegendsConfigFromPieChartData(pieChartData, 4),
+            modifier = Modifier.background(colorResource(id = R.color.pastel_blue))
+        )
+        // Pie chart composable
+        PieChart(
+            modifier = Modifier.fillMaxSize(),
+            pieChartData = pieChartData,
+            pieChartConfig = pieChartConfig,
+        ) { slice ->
+            Toast.makeText(context, slice.label, Toast.LENGTH_SHORT).show()
+        }
+    }
 }
 
 // Generate a random RGB colour from the hash of the key of an item from assetHoldingTotalValues
