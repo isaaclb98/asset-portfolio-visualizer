@@ -74,11 +74,29 @@ class TimeSeriesViewModel : ViewModel() {
                     val tenYearEntry = timeSeries.entries.elementAtOrNull(2520)
                     val tenYearPrice = tenYearEntry?.value?.close?.toDoubleOrNull()
 
-                    netWorthOverTimePeriod["1Y"] = (netWorthOverTimePeriod["1Y"] ?: 0.0) + ((oneYearPrice ?: 0.0) * it.quantity)
-                    netWorthOverTimePeriod["3Y"] = (netWorthOverTimePeriod["3Y"] ?: 0.0) + ((threeYearPrice ?: 0.0) * it.quantity)
-                    netWorthOverTimePeriod["5Y"] = (netWorthOverTimePeriod["5Y"] ?: 0.0) + ((fiveYearPrice ?: 0.0) * it.quantity)
-                    netWorthOverTimePeriod["10Y"] = (netWorthOverTimePeriod["10Y"] ?: 0.0) + ((tenYearPrice ?: 0.0) * it.quantity)
+                    if (oneYearPrice == null || oneYearPrice == 0.0) {
+                        netWorthOverTimePeriod["1Y"] = 0.0
+                    } else {
+                        netWorthOverTimePeriod["1Y"] = (netWorthOverTimePeriod["1Y"] ?: 0.0) + (oneYearPrice * it.quantity)
+                    }
 
+                    if (threeYearPrice == null || threeYearPrice == 0.0) {
+                        netWorthOverTimePeriod["3Y"] = 0.0
+                    } else {
+                        netWorthOverTimePeriod["3Y"] = (netWorthOverTimePeriod["3Y"] ?: 0.0) + (threeYearPrice * it.quantity)
+                    }
+
+                    if (fiveYearPrice == null || fiveYearPrice == 0.0) {
+                        netWorthOverTimePeriod["5Y"] = 0.0
+                    } else {
+                        netWorthOverTimePeriod["5Y"] = (netWorthOverTimePeriod["5Y"] ?: 0.0) + (fiveYearPrice * it.quantity)
+                    }
+
+                    if (tenYearPrice == null || tenYearPrice == 0.0) {
+                        netWorthOverTimePeriod["10Y"] = 0.0
+                    } else {
+                        netWorthOverTimePeriod["10Y"] = (netWorthOverTimePeriod["10Y"] ?: 0.0) + (tenYearPrice * it.quantity)
+                    }
 
                 } catch (e: Exception) {
                     Log.e("TimeSeriesViewModel", "Error fetching time series for ${it.symbol}", e)

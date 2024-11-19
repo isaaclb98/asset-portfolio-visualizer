@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -551,11 +552,14 @@ fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>, context: Contex
         labelVisible = true
     )
 
-    Column(modifier = Modifier.height(500.dp)) {
-        Legends(
-            legendsConfig = DataUtils.getLegendsConfigFromPieChartData(pieChartData, 4),
-            modifier = Modifier.background(colorResource(id = R.color.pastel_blue))
-        )
+    Column(modifier = Modifier.height(500.dp), verticalArrangement = Arrangement.Center) {
+        if (pieChartData.slices.size > 1 && pieChartData.slices.size < 9) {
+            Legends(
+                legendsConfig = DataUtils.getLegendsConfigFromPieChartData(pieChartData, 4),
+                modifier = Modifier.background(colorResource(id = R.color.pastel_blue))
+            )
+        }
+
         // Pie chart composable
         PieChart(
             modifier = Modifier.fillMaxSize(),
