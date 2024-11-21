@@ -6,7 +6,7 @@ import retrofit2.http.Query
 import com.squareup.moshi.Json
 
 interface AlphaVantageService {
-
+    // Query for searching.
     @GET("query")
     fun searchSymbols(
         @Query("function") function: String = "SYMBOL_SEARCH",
@@ -14,6 +14,7 @@ interface AlphaVantageService {
         @Query("apikey") apiKey: String = BuildConfig.ALPHA_VANTAGE_API_KEY
     ): Call<SymbolSearchResponse>
 
+    // Query for getting a time series (stock price data)
     @GET("query")
     suspend fun getTimeSeriesDaily(
         @Query("function") function: String = "TIME_SERIES_DAILY",
@@ -23,11 +24,11 @@ interface AlphaVantageService {
     ): TimeSeriesDailyResponse
 }
 
-
 data class SymbolSearchResponse(
     @Json(name = "bestMatches") val bestMatches: List<BestMatch>?
 )
 
+// Search call response
 data class BestMatch(
     @Json(name = "1. symbol") val symbol: String?,
     @Json(name = "2. name") val name: String?,
@@ -40,6 +41,7 @@ data class BestMatch(
     @Json(name = "9. matchScore") val matchScore: String?
 )
 
+// Time series response. We don't use the metadata
 data class TimeSeriesDailyResponse(
     @Json(name = "Meta Data") val metaData: MetaData,
     // We are mapping date -> daily data

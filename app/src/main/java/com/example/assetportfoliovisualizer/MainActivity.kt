@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -64,7 +65,6 @@ import co.yml.charts.ui.piechart.models.PieChartConfig
 import co.yml.charts.ui.piechart.models.PieChartData
 import com.example.assetportfoliovisualizer.ui.theme.AssetPortfolioVisualizerTheme
 import kotlin.random.Random
-
 
 class MainActivity : ComponentActivity() {
     // Room database
@@ -307,6 +307,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
     )
 }
 
+// The title of the app used in TopAppBar
 @Preview
 @Composable
 fun TitleComponent() {
@@ -321,6 +322,7 @@ fun TitleComponent() {
     )
 }
 
+// Title of individual sections
 @Composable
 fun SectionTitle(title: String) {
     Text(
@@ -333,6 +335,7 @@ fun SectionTitle(title: String) {
     )
 }
 
+// Search field
 @Composable
 fun TickerSearchField(viewModel: TickerSearchViewModel) {
     var ticker by remember { mutableStateOf("") }
@@ -359,6 +362,7 @@ fun TickerSearchField(viewModel: TickerSearchViewModel) {
     )
 }
 
+// The assets that are returned when the user searches for them in the search bar.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchResultItem(result: BestMatch, onAddAsset: (OwnedAsset) -> Unit) {
@@ -388,6 +392,7 @@ fun SearchResultItem(result: BestMatch, onAddAsset: (OwnedAsset) -> Unit) {
             .clickable { openDialog = true }
         )
 
+    // Alert for the user to enter a quantity of the given asset
     if (openDialog) {
         AlertDialog(
             onDismissRequest = { openDialog = false },
@@ -426,6 +431,7 @@ fun SearchResultItem(result: BestMatch, onAddAsset: (OwnedAsset) -> Unit) {
     }
 }
 
+// The display composable for the assets that the user owns
 @Composable
 fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit, onModifyAsset: (OwnedAsset, Int) -> Unit) {
     var openDialog by remember { mutableStateOf(false) }
@@ -472,6 +478,7 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit, onMod
             Text(text = "• ${asset.region}")
         }
 
+        // Alert for the user to enter new quantity
         if (openDialog) {
             AlertDialog(
                 onDismissRequest = { openDialog = false },
@@ -511,6 +518,7 @@ fun OwnedAssetItem(asset: OwnedAsset, onClickDelete: (OwnedAsset) -> Unit, onMod
     }
 }
 
+// Update button to retrieve the newest info (to save API calls)
 @Composable
 fun UpdateButton(onClickUpdate: () -> Unit) {
     Column(
@@ -526,20 +534,24 @@ fun UpdateButton(onClickUpdate: () -> Unit) {
     }
 }
 
+// The pie chart and the accompanying legend
 @Composable
 fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>, context: Context) {
     // Generate a list of slices for the pie chart
-    val pieChartData = PieChartData(
-        slices = assetHoldingTotalValues.entries.map { entry ->
-            PieChartData.Slice(
-                label = entry.key,
-                value = entry.value.toFloat(),
-                // Generate a random colour based on the hash of the entry in the map
-                color = generateColorFromHash(entry.key)
-            )
-        },
-        plotType = PlotType.Pie
-    )
+    // Use 'remember' to listen to when assetHoldingTotalValues changes
+    val pieChartData = remember(assetHoldingTotalValues) {
+        PieChartData(
+            slices = assetHoldingTotalValues.entries.map { entry ->
+                PieChartData.Slice(
+                    label = entry.key,
+                    value = entry.value.toFloat(),
+                    // Generate a random color based on the hash of the entry in the map
+                    color = generateColorFromHash(entry.key)
+                )
+            },
+            plotType = PlotType.Pie
+        )
+    }
 
     // Configure the pie chart
     val pieChartConfig = PieChartConfig(
@@ -552,8 +564,8 @@ fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>, context: Contex
         labelVisible = true
     )
 
-    Column(modifier = Modifier.height(500.dp), verticalArrangement = Arrangement.Center) {
-        if (pieChartData.slices.size > 1 && pieChartData.slices.size < 9) {
+    Column(modifier = Modifier.heightIn(max = 1000.dp), verticalArrangement = Arrangement.Top) {
+        if (pieChartData.slices.size > 1) {
             Legends(
                 legendsConfig = DataUtils.getLegendsConfigFromPieChartData(pieChartData, 4),
                 modifier = Modifier.background(colorResource(id = R.color.pastel_blue))
@@ -562,7 +574,7 @@ fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>, context: Contex
 
         // Pie chart composable
         PieChart(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth(),
             pieChartData = pieChartData,
             pieChartConfig = pieChartConfig,
         ) { slice ->
@@ -573,6 +585,7 @@ fun AssetsPieChart(assetHoldingTotalValues: Map<String, Double>, context: Contex
 
 // Generate a random RGB colour from the hash of the key of an item from assetHoldingTotalValues
 fun generateColorFromHash(key: String): Color {
+    // seed
     val random = Random(key.hashCode())
     val red = random.nextInt(0, 256)
     val green = random.nextInt(0, 256)
