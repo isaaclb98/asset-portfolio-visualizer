@@ -207,7 +207,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
-                                    text = String.format("%.2f", netWorth ?: 0.0),
+                                    text = "$" + String.format("%.2f", netWorth ?: 0.0),
                                     modifier = Modifier.weight(1f),
                                     textAlign = TextAlign.Center
                                 )
@@ -228,7 +228,7 @@ fun MyAppScreen(tickerSearchViewModel: TickerSearchViewModel, ownedAssetsViewMod
                                         textAlign = TextAlign.Center
                                     )
                                     Text(
-                                        text = String.format("%.2f", totalValue),
+                                        text = "$" + String.format("%.2f", totalValue),
                                         modifier = Modifier.weight(1f),
                                         textAlign = TextAlign.Center
                                     )
